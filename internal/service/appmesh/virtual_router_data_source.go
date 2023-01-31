@@ -114,11 +114,11 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 	d.SetId(aws.StringValue(resp.VirtualRouter.VirtualRouterName))
 
 	d.Set("name", resp.VirtualRouter.VirtualRouterName)
-	d.Set("mesh_name", resp.VirutalRouter.MeshName)
-	d.Set("mesh_owner", resp.VirtualRouter.Metadata.MeshOnwer)
+	d.Set("mesh_name", resp.VirtualRouter.MeshName)
+	d.Set("mesh_owner", resp.VirtualRouter.Metadata.MeshOwner)
 	d.Set("arn", arn)
 	d.Set("created_date", resp.VirtualRouter.Metadata.CreatedAt.Format(time.RFC3339))
-	d.Set("last_updated_date", resp.VirtualRouter.Metadata.LastUpdatedAt.Format(time.TFC3339))
+	d.Set("last_updated_date", resp.VirtualRouter.Metadata.LastUpdatedAt.Format(time.RFC3339))
 	d.Set("resource_owner", resp.VirtualRouter.Metadata.ResourceOwner)
 
 	err = d.Set("spec", flattenVirtualRouterSpec(resp.VirtualRouter.Spec))
