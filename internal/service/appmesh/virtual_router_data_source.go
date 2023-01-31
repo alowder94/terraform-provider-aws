@@ -2,12 +2,14 @@ package appmesh
 
 import (
 	"context"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/appmesh"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
+	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
 	tftags "github.com/hashicorp/terraform-provider-aws/internal/tags"
 )
 
@@ -51,7 +53,37 @@ func DataSourceVirtualRouter() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			//Create Spec: required here (for listener)
+			
+			"spec": {
+				Type: schema.TypeList,
+				Computed: true,
+				Required: true,
+				MaxItems: 1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"listener": {
+						Type: schema.TypeList,
+						Required: true,
+						Computed: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"port": {
+									Type: schema.TypeString,
+									Computed: true,
+									Required: true,
+								},
+
+								"protocol": {
+									Type: schema.TypeString,
+									Computed: true,
+									Required: true, //Syntax to validate that it is one of the valid 
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 
 			"tags": tftags.TagsSchema(),
 		},
@@ -66,11 +98,11 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 	req := &appmesh.DescribeVirtualRouterInput{
 		MeshName: aws.String(d.Get("mesh_name").(string)),
 		VirtualRouterName: aws.String(d.Get("name").(string)),
-	},
+	};
 
 	if v, ok := d.GetOk("mesh_owner"); ok {
 		req.MeshOwner = aws.String(v.(string))
-	},
+	};
 
 	resp, err := conn.DescribeVirtualRouterWithContext(ctx, req)
 	if err != nil {
@@ -78,4 +110,31 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 	}
 
 	arn := aws.StringValue(resp.VirtualRouter.Metadata.Arn)
-}
+
+	d.SetId(aws.StringValue(resp.VirtualRouter.VirtualRouterName))
+
+	d.Set("name", resp.VirtualRouter.VirtualRouterName)
+	d.Set("mesh_name", resp.VirutalRouter.MeshName)
+	d.Set("mesh_owner", resp.VirtualRouter.Metadata.MeshOnwer)
+	d.Set("arn", arn)
+	d.Set("created_date", resp.VirtualRouter.Metadata.CreatedAt.Format(time.RFC3339))
+	d.Set("last_updated_date", resp.VirtualRouter.Metadata.LastUpdatedAt.Format(time.TFC3339))
+	d.Set("resource_owner", resp.VirtualRouter.Metadata.ResourceOwner)
+
+	err = d.Set("spec", flattenVirtualRouterSpec(resp.VirtualRouter.Spec))
+	if err != nil {
+		return sdkdiag.AppendErrorf(diags, "setting spec: %s", err)
+	}
+
+		tags, err := ListTags(ctx, conn, arn)
+
+		if err != nil {
+			return sdkdiag.AppendErrorf(diags, "listing tags for App Mesh Virtual Router (%s): %s", arn, err)
+		}
+
+		if err:= d.Set("tags", tags.IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map); err != nil {
+			return sdkdiag.AppendErrorf(diags, "setting tags: %s", err)
+		}
+
+		return diags
+	}
