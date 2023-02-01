@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/appmesh"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
 	tftags "github.com/hashicorp/terraform-provider-aws/internal/tags"
@@ -76,7 +77,8 @@ func DataSourceVirtualRouter() *schema.Resource {
 								"protocol": {
 									Type: schema.TypeString,
 									Computed: true,
-									Required: true, //Syntax to validate that it is one of the valid 
+									Required: true,
+									ValidateFunc: validation.StringInSlice(appmesh.PortProtocol_Values(), false),
 								},
 							},
 						},
