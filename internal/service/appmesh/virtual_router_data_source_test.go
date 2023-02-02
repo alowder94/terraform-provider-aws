@@ -1,6 +1,7 @@
 package appmesh_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/appmesh"
@@ -22,7 +23,7 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckVirtualRouterDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVirtualRouterConfig(virtualRouterName),
+				Config: testAccVirtualRouterConfig(resourceName, virtualRouterName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName, "arn", dataSourceName, "arn"),
 					resource.TestCheckResourceAttrPair(resourceName, "created_date", dataSourceName, "created_name"),
@@ -31,8 +32,8 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPair(resourceName, "mesh_owner", dataSourceName, "mesh_owner"),
 					resource.TestCheckResourceAttrPair(resourceName, "name", dataSourceName, "name"),
 					resource.TestCheckResourceAttrPair(resourceName, "resource_owner", dataSourceName, "resource_owner"),
-					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port", dataSourceName, "spec.0.listeer.0.port"),
-					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.protocol", dataSourceName, "spec.0.listener.0.protocol"),
+					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.port", dataSourceName, "spec.0.listeer.0.port_mapping.0.port"),
+					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.protocol", dataSourceName, "spec.0.listener.0.protocol"),
 					resource.TestCheckResourceAttrPair(resourceName, "tags", dataSourceName, "tags"),
 				),
 			},
@@ -40,4 +41,31 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 	})
 }
 
-//Define testAccVirtualRouterConfig Here
+func testAccVirtualRouterConfig(meshName string, routerName string) string {
+	return fmt.Sprintf(`
+data "aws_caller_identity" "current" {}
+
+resource "aws_appmesh_mesh "test" {
+	name = %[1]q
+}
+
+resource "aws_appmesh_virtual_router" "test" {
+	name = %[2]q
+	mesh_name = aws_appmesh_mesh.test.id
+
+	spec {
+		listener {
+			port_mapping {
+				port = 8080
+				protocol = "http"
+			}
+		}
+	}
+}
+
+data "aws_appmesh_virtual_router" "test" {
+	name = %[2]q
+	mesh_name = %[1]q
+}
+	`, meshName, routerName)
+}

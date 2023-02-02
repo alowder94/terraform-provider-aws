@@ -36,6 +36,7 @@ func DataSourceVirtualRouter() *schema.Resource {
 
 			"mesh_name": {
 				Type:     schema.TypeString,
+				Required: true,
 				Computed: true,
 			},
 
@@ -54,38 +55,47 @@ func DataSourceVirtualRouter() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			
+
 			"spec": {
-				Type: schema.TypeList,
+				Type:     schema.TypeList,
 				Computed: true,
 				Required: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"listener": {
-						Type: schema.TypeList,
-						Required: true,
-						Computed: true,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"port": {
-									Type: schema.TypeString,
-									Computed: true,
-									Required: true,
-								},
+							Type:     schema.TypeList,
+							Required: true,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"port_mapping": {
+										Type:     schema.TypeList,
+										Required: true,
+										Computed: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"port": {
+													Type:     schema.TypeString,
+													Computed: true,
+													Required: true,
+												},
 
-								"protocol": {
-									Type: schema.TypeString,
-									Computed: true,
-									Required: true,
-									ValidateFunc: validation.StringInSlice(appmesh.PortProtocol_Values(), false),
+												"protocol": {
+													Type:         schema.TypeString,
+													Computed:     true,
+													Required:     true,
+													ValidateFunc: validation.StringInSlice(appmesh.PortProtocol_Values(), false),
+												},
+											},
+										},
+									},
 								},
 							},
 						},
 					},
 				},
 			},
-		},
 
 			"tags": tftags.TagsSchema(),
 		},
@@ -98,13 +108,13 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 	ignoreTagsConfig := meta.(*conns.AWSClient).IgnoreTagsConfig
 
 	req := &appmesh.DescribeVirtualRouterInput{
-		MeshName: aws.String(d.Get("mesh_name").(string)),
+		MeshName:          aws.String(d.Get("mesh_name").(string)),
 		VirtualRouterName: aws.String(d.Get("name").(string)),
-	};
+	}
 
 	if v, ok := d.GetOk("mesh_owner"); ok {
 		req.MeshOwner = aws.String(v.(string))
-	};
+	}
 
 	resp, err := conn.DescribeVirtualRouterWithContext(ctx, req)
 	if err != nil {
@@ -128,15 +138,15 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 		return sdkdiag.AppendErrorf(diags, "setting spec: %s", err)
 	}
 
-		tags, err := ListTags(ctx, conn, arn)
+	tags, err := ListTags(ctx, conn, arn)
 
-		if err != nil {
-			return sdkdiag.AppendErrorf(diags, "listing tags for App Mesh Virtual Router (%s): %s", arn, err)
-		}
-
-		if err:= d.Set("tags", tags.IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map); err != nil {
-			return sdkdiag.AppendErrorf(diags, "setting tags: %s", err)
-		}
-
-		return diags
+	if err != nil {
+		return sdkdiag.AppendErrorf(diags, "listing tags for App Mesh Virtual Router (%s): %s", arn, err)
 	}
+
+	if err := d.Set("tags", tags.IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map); err != nil {
+		return sdkdiag.AppendErrorf(diags, "setting tags: %s", err)
+	}
+
+	return diags
+}
