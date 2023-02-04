@@ -44,8 +44,6 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 
 func testAccVirtualRouterDataSourceConfig(meshName string, routerName string) string {
 	return fmt.Sprintf(`
-data "aws_caller_identity" "current" {}
-
 resource "aws_appmesh_mesh" "test" {
 	name = %[1]q
 }
