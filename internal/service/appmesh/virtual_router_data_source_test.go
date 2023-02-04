@@ -13,6 +13,7 @@ import (
 func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 	ctx := acctest.Context(t)
 	virtualRouterName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
+	meshName := sdkacctest.RandomWithPrefix(acctest.ResourcePrefix)
 	resourceName := "aws_appmesh_virtual_router.test"
 	dataSourceName := "data.aws_appmesh_virtual_router.test"
 
@@ -23,17 +24,17 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 		CheckDestroy:             testAccCheckVirtualRouterDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccVirtualRouterConfig(resourceName, virtualRouterName),
+				Config: testAccVirtualRouterDataSourceConfig(meshName, virtualRouterName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPair(resourceName, "arn", dataSourceName, "arn"),
-					resource.TestCheckResourceAttrPair(resourceName, "created_date", dataSourceName, "created_name"),
+					resource.TestCheckResourceAttrPair(resourceName, "created_date", dataSourceName, "created_date"),
 					resource.TestCheckResourceAttrPair(resourceName, "last_updated_date", dataSourceName, "last_updated_date"),
 					resource.TestCheckResourceAttrPair(resourceName, "mesh_name", dataSourceName, "mesh_name"),
 					resource.TestCheckResourceAttrPair(resourceName, "mesh_owner", dataSourceName, "mesh_owner"),
 					resource.TestCheckResourceAttrPair(resourceName, "name", dataSourceName, "name"),
 					resource.TestCheckResourceAttrPair(resourceName, "resource_owner", dataSourceName, "resource_owner"),
-					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.port", dataSourceName, "spec.0.listeer.0.port_mapping.0.port"),
-					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.protocol", dataSourceName, "spec.0.listener.0.protocol"),
+					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.port", dataSourceName, "spec.0.listener.0.port_mapping.0.port"),
+					resource.TestCheckResourceAttrPair(resourceName, "spec.0.listener.0.port_mapping.0.protocol", dataSourceName, "spec.0.listener.0.port_mapping.0.protocol"),
 					resource.TestCheckResourceAttrPair(resourceName, "tags", dataSourceName, "tags"),
 				),
 			},
@@ -41,11 +42,11 @@ func TestAccAppMeshVirtualRouterDataSource_basic(t *testing.T) {
 	})
 }
 
-func testAccVirtualRouterConfig(meshName string, routerName string) string {
+func testAccVirtualRouterDataSourceConfig(meshName string, routerName string) string {
 	return fmt.Sprintf(`
 data "aws_caller_identity" "current" {}
 
-resource "aws_appmesh_mesh "test" {
+resource "aws_appmesh_mesh" "test" {
 	name = %[1]q
 }
 
@@ -64,8 +65,8 @@ resource "aws_appmesh_virtual_router" "test" {
 }
 
 data "aws_appmesh_virtual_router" "test" {
-	name = %[2]q
-	mesh_name = %[1]q
+	name = aws_appmesh_virtual_router.test.name
+	mesh_name = aws_appmesh_mesh.test.name
 }
 	`, meshName, routerName)
 }

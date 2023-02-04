@@ -8,7 +8,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/appmesh"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
 	"github.com/hashicorp/terraform-provider-aws/internal/errs/sdkdiag"
 	tftags "github.com/hashicorp/terraform-provider-aws/internal/tags"
@@ -37,12 +36,10 @@ func DataSourceVirtualRouter() *schema.Resource {
 			"mesh_name": {
 				Type:     schema.TypeString,
 				Required: true,
-				Computed: true,
 			},
 
 			"mesh_owner": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 
@@ -59,33 +56,26 @@ func DataSourceVirtualRouter() *schema.Resource {
 			"spec": {
 				Type:     schema.TypeList,
 				Computed: true,
-				Required: true,
-				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"listener": {
 							Type:     schema.TypeList,
-							Required: true,
 							Computed: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"port_mapping": {
 										Type:     schema.TypeList,
-										Required: true,
 										Computed: true,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"port": {
-													Type:     schema.TypeString,
+													Type:     schema.TypeInt,
 													Computed: true,
-													Required: true,
 												},
 
 												"protocol": {
-													Type:         schema.TypeString,
-													Computed:     true,
-													Required:     true,
-													ValidateFunc: validation.StringInSlice(appmesh.PortProtocol_Values(), false),
+													Type:     schema.TypeString,
+													Computed: true,
 												},
 											},
 										},
@@ -144,7 +134,7 @@ func dataSourceVirtualRouterRead(ctx context.Context, d *schema.ResourceData, me
 		return sdkdiag.AppendErrorf(diags, "listing tags for App Mesh Virtual Router (%s): %s", arn, err)
 	}
 
-	if err := d.Set("tags", tags.IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map); err != nil {
+	if err := d.Set("tags", tags.IgnoreAWS().IgnoreConfig(ignoreTagsConfig).Map()); err != nil {
 		return sdkdiag.AppendErrorf(diags, "setting tags: %s", err)
 	}
 
