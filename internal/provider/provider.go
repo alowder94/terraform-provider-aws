@@ -620,6 +620,7 @@ func New(ctx context.Context) (*schema.Provider, error) {
 			"aws_ecs_cluster":              ecs.DataSourceCluster(),
 			"aws_ecs_container_definition": ecs.DataSourceContainerDefinition(),
 			"aws_ecs_service":              ecs.DataSourceService(),
+			"aws_ecs_service_list":         ecs.DataSourceServiceList(),
 			"aws_ecs_task_definition":      ecs.DataSourceTaskDefinition(),
 
 			"aws_efs_access_point":  efs.DataSourceAccessPoint(),
